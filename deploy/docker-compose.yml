@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: never-again
+      POSTGRES_PASSWORD: never-again
+      POSTGRES_DB: never-again
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U never-again"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    ports:
+      - "8742:8742"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://never-again:never-again@postgres:5432/never-again
+      OLLAMA_URL: http://host.docker.internal:11434
+      EMBED_MODEL: nomic-embed-text
+      DEFAULT_TEAM: local
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./server:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:

@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv venv && uv pip install -e ".[all,dev]"
+
+      - name: Install dev tools
+        run: uv pip install ruff pyright
+
+      - name: Lint (ruff)
+        run: uv run ruff check never_again/
+
+      - name: Type check (pyright)
+        run: uv run pyright never_again/
+        continue-on-error: true   # non-blocking until types are fully annotated
+
+      - name: Run tests
+        run: uv run pytest tests/ -v --tb=short
+        if: hashFiles('tests/**/*.py') != ''

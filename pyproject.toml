@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "never-again"
+version = "0.1.0"
+description = "Stops your coding agent repeating the same mistake."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Nicola", email = "105462305+nicoalbo0@users.noreply.github.com" }]
+keywords = ["mcp", "coding-agent", "failure-memory", "llm", "developer-tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = ["aiosqlite", "mcp"]          # base = zero-infra local + MCP product surface
+
+[project.optional-dependencies]
+local  = ["fastembed"]                        # in-process semantic search, no Ollama
+ollama = ["httpx"]                            # semantic embeddings via a running Ollama
+server = ["fastapi", "uvicorn", "asyncpg", "pgvector", "sqlalchemy"]
+all    = ["never-again[local,ollama,server]"]
+dev    = ["pytest", "pytest-asyncio", "fastapi", "httpx"]   # for running the test suite
+
+[project.urls]
+Homepage = "https://github.com/nicoalbo0/never-again"
+Repository = "https://github.com/nicoalbo0/never-again"
+Issues = "https://github.com/nicoalbo0/never-again/issues"
+
+[project.scripts]
+never-again     = "never_again.cli.main:main"
+never-again-mcp = "never_again.mcp.server:main"
+
+[tool.setuptools.packages.find]
+include = ["never_again*"]
