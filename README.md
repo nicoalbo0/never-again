@@ -1,3 +1,4 @@
+
 # never-again
 
 A failure memory for coding agents. When an agent hits an error, it can check whether that same failure was already solved — in this repo, by an earlier session — instead of debugging it again from scratch. Once solved, the fix is written down so the next session gets it for free.
@@ -8,9 +9,9 @@ It runs locally on top of a SQLite file. No server to stand up, no API keys, no 
 
 `never-again` exposes three tools to an MCP-compatible agent (Claude Code, Cursor, Gemini CLI, or anything that speaks MCP):
 
-- **`query_failures(text, limit)`** — search past failures similar to an error or task. Each result includes the fix that worked and a short `WHEN / CHECK / BECAUSE` prevention rule. If nothing genuinely matches, it returns an empty list rather than a confident wrong answer.
-- **`log_failure(error, solution, context, scope)`** — record a solved failure. Secrets, tokens, emails, and usernames are stripped before anything is written.
-- **`verify_resolution(failure_id)`** — confirm a fix worked, which nudges it higher in future results.
+* **`query_failures(text, limit)`** — search past failures similar to an error or task. Each result includes the fix that worked and a short `WHEN / CHECK / BECAUSE` prevention rule. If nothing genuinely matches, it returns an empty list rather than a confident wrong answer.
+* **`log_failure(error, solution, context, scope)`** — record a solved failure. Secrets, tokens, emails, and usernames are stripped before anything is written.
+* **`verify_resolution(failure_id)`** — confirm a fix worked, which nudges it higher in future results.
 
 The intended loop is simple:
 
@@ -24,9 +25,9 @@ error ──▶ query_failures ──▶ apply known fix ──▶ verify_resolu
 
 ## What it doesn't do
 
-- It isn't a shared public knowledge base. By default everything stays in a local SQLite file scoped to you. Team sharing is opt-in (see below).
-- It doesn't fix anything itself. It surfaces a prior fix and a rule; your agent decides whether the situation actually matches and applies it.
-- It won't always have an answer. A memory that always responds would send agents chasing fixes for problems they don't have, so it abstains when the match is weak. Empty results are the expected case early on, and on a brand-new repo.
+* It isn't a shared public knowledge base. By default everything stays in a local SQLite file scoped to you. Team sharing is opt-in (see below).
+* It doesn't fix anything itself. It surfaces a prior fix and a rule; your agent decides whether the situation actually matches and applies it.
+* It won't always have an answer. A memory that always responds would send agents chasing fixes for problems they don't have, so it abstains when the match is weak. Empty results are the expected case early on, and on a brand-new repo.
 
 ## When it helps (and when it doesn't)
 
@@ -34,22 +35,22 @@ Being honest about this up front, because it sets the right expectations:
 
 **It pays off when**
 
-- You work in a **mature repo** with a history of recurring, stack-specific
+* You work in a **mature repo** with a history of recurring, stack-specific
   failures (migrations, async pitfalls, build/packaging quirks, Docker
   networking). These fail in repeatable ways, which is exactly what a memory
   catches.
-- The same class of error shows up **across sessions or across agents** — the
+* The same class of error shows up **across sessions or across agents** — the
   durable edge here is cross-session memory, the part a model's context window
   doesn't cover.
-- A team hits the **same problems** and wants the first person's fix to save the
+* A team hits the **same problems** and wants the first person's fix to save the
   next person's afternoon (team tier).
 
 **It won't do much when**
 
-- You're on a **brand-new or greenfield** project — there's little history to
+* You're on a **brand-new or greenfield** project — there's little history to
   seed from, so early queries return empty. That's correct behavior, but it means
   the value arrives later, as failures accumulate.
-- The bugs are **one-off and novel** rather than recurring — there's nothing to
+* The bugs are **one-off and novel** rather than recurring — there's nothing to
   remember.
 
 The payoff is a non-event: an error you *didn't* have to debug a second time. That
@@ -63,7 +64,7 @@ pip install never-again
 ```
 
 If you want the `never-again` command available globally — recommended, and
-required if you use the session-start hook (see [Agent skill](#agent-skill)) —
+required if you use the session-start hook (see [Agent skill](https://claude.ai/chat/db22b7ff-5c87-40da-92e8-a73a8b66205b#agent-skill)) —
 install it as a tool instead, so it lands on your `PATH`:
 
 ```bash
@@ -115,7 +116,7 @@ project your agent is working in:
 }
 ```
 
-**With a `.env` file.** Copy [`.env.example`](.env.example) to `.env` and edit
+**With a `.env` file.** Copy [`.env.example`](https://claude.ai/chat/.env.example) to `.env` and edit
 it. This is handy for the CLI and local development. Note that the MCP server is
 launched by your agent's client, not from your project folder, so a bare `.env`
 sitting in a project directory will **not** be picked up by the server. To use a
@@ -137,14 +138,14 @@ pip install "never-again[local]"
 NEVER_AGAIN_EMBEDDER=local
 ```
 
-`local` runs an embedding model in-process via `fastembed` — still no server, nothing leaves the machine. If you already run [Ollama](https://ollama.com), `ollama` uses it for embeddings instead.
+`local` runs an embedding model in-process via `fastembed` — still no server, nothing leaves the machine. If you already run [Ollama](https://ollama.com/), `ollama` uses it for embeddings instead.
 
 | Variable                     | Default              | Purpose                                                               |
 | ---------------------------- | -------------------- | --------------------------------------------------------------------- |
-| `NEVER_AGAIN_EMBEDDER`     | `fts`              | `local` (in-process semantic search) or `ollama`                  |
+| `NEVER_AGAIN_EMBEDDER`     | `fts`              | `local`(in-process semantic search) or`ollama`                    |
 | `NEVER_AGAIN_COSINE_FLOOR` | `0.45`             | min similarity to count as a match (semantic path)                    |
 | `NEVER_AGAIN_TEAM`         | `local`            | your team slug, when sharing                                          |
-| `NEVER_AGAIN_URL`          | _unset_            | a team server URL; when set, tools talk to it instead of local SQLite |
+| `NEVER_AGAIN_URL`          | *unset*            | a team server URL; when set, tools talk to it instead of local SQLite |
 | `OLLAMA_EMBED_MODEL`       | `nomic-embed-text` | any Ollama embedding model                                            |
 
 ### Team sharing
@@ -176,13 +177,13 @@ The test suite is fully mocked — no network, no real embedding models, no exte
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup
-and the design principles to keep in mind, and [ARCHITECTURE.md](ARCHITECTURE.md)
+Contributions are welcome — see [CONTRIBUTING.md](https://claude.ai/chat/CONTRIBUTING.md) for dev setup
+and the design principles to keep in mind, and [ARCHITECTURE.md](https://claude.ai/chat/ARCHITECTURE.md)
 for how the pieces fit together and why. The most-wanted improvements are better
 cold-start seeding and an eval harness; both are described there.
 
-Release notes live in [CHANGELOG.md](CHANGELOG.md).
+Release notes live in [CHANGELOG.md](https://claude.ai/chat/CHANGELOG.md).
 
-**##** License
+## License
 
-**[**Apache 2.0**](**LICENSE**)**
+[Apache-2.0](https://claude.ai/chat/LICENSE)

@@ -8,9 +8,10 @@ description: >-
   (database migrations, async code, auth flows, build/packaging, Docker networking).
   Backed by a local-first failure database via three MCP tools: query_failures,
   log_failure, verify_resolution.
-license: Apache 2.0
+license: Apache-2.0
 compatibility: "Claude Code, Cursor, Gemini CLI, any MCP-compatible agent"
 ---
+
 # never-again
 
 A failure memory for coding agents. Capture a mistake once; never repeat it.
@@ -61,13 +62,11 @@ Do not log while still debugging, and do not log guesses.
 Search the database for failures similar to what you're seeing.
 
 **Arguments**
-
 - `text` (required): paste the error message verbatim, OR describe the task you're
   about to start. Verbatim error text matches best.
 - `limit` (optional, default 5): how many results to return.
 
 **Returns** a list, each item:
-
 - `id` — the record's id (keep it; you'll need it for `verify_resolution`)
 - `error` — the original error that was logged
 - `solution` — what fixed it
@@ -100,7 +99,6 @@ because it was returned — judge it by whether the WHEN genuinely fits.
 Record a solved failure so future agents skip the pain.
 
 **Arguments**
-
 - `error` (required): the core error text. Keep the meaningful part of the message;
   strip the volatile noise (the fingerprinter already removes paths, numbers, and
   ids, but trim anything obviously machine-specific).
@@ -121,7 +119,6 @@ Record a solved failure so future agents skip the pain.
 rule (yours if you supplied one, otherwise the generated fallback).
 
 **Before you call it — privacy**
-
 - Remove absolute paths, secrets, tokens, and connection strings containing
   passwords from `error`, `solution`, and `context`.
 - Describe the fix in words; never paste proprietary code.
@@ -136,7 +133,6 @@ Confirm that a fix from `query_failures` actually worked. This bumps the record'
 verified counter, which strengthens it for everyone next time.
 
 **Arguments**
-
 - `failure_id` (required): the `id` from the `query_failures` result you used.
 
 **Returns** `{ "verified": true }` (or `false` if the id wasn't found).
@@ -163,7 +159,6 @@ text in `log_failure`, aim for that quality — the rule generator builds on wha
 give it.
 
 Weak:
-
 ```
 WHEN: doing database migrations
 CHECK: be careful
@@ -171,7 +166,6 @@ BECAUSE: migrations can fail
 ```
 
 Strong:
-
 ```
 WHEN: adding a column to a table that already has rows in production
 CHECK: the new column is nullable or has a server_default
@@ -198,7 +192,6 @@ Register it with your agent (Claude Code example, in your MCP config):
 ```
 
 Optional environment variables, set in the MCP config's `env` block:
-
 - `NEVER_AGAIN_EMBEDDER` — `fts` (default, keyword-only), `local` (in-process
   semantic search), or `ollama` (semantic search via a running Ollama).
 - `NEVER_AGAIN_TEAM` — your team slug, if sharing.
