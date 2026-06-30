@@ -15,7 +15,7 @@ def open_embedder(settings: Settings) -> Embedder:
     """Pick the embedder from config. Heavy backends import only on demand."""
     if settings.embedder == "local":
         from never_again.embeddings.local import LocalEmbedder
-        return LocalEmbedder()
+        return LocalEmbedder(settings.local_embed_model)
     if settings.embedder == "ollama":
         from never_again.embeddings.ollama import OllamaEmbedder
         return OllamaEmbedder(settings.ollama_url, settings.ollama_embed_model)

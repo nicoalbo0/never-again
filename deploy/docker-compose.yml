@@ -17,20 +17,24 @@ services:
       retries: 5
 
   server:
-    build: .
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
     ports:
       - "8742:8742"
     environment:
-      DATABASE_URL: postgresql+asyncpg://never-again:never-again@postgres:5432/never-again
+      NEVER_AGAIN_STORE: postgres
+      NEVER_AGAIN_DB: postgresql+asyncpg://never-again:never-again@postgres:5432/never-again
+      NEVER_AGAIN_TEAM: local
+      NEVER_AGAIN_EMBEDDER: ollama
+      NEVER_AGAIN_EMBED_DIMENSION: 768
       OLLAMA_URL: http://host.docker.internal:11434
-      EMBED_MODEL: nomic-embed-text
-      DEFAULT_TEAM: local
-      LOG_LEVEL: info
+      OLLAMA_EMBED_MODEL: nomic-embed-text
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./server:/app
+      - ..:/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

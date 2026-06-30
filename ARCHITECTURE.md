@@ -146,9 +146,10 @@ the local SQLite store.
 - **Cold start.** A brand-new repo seeds little from git history and returns empty
   results until failures accumulate. Empty-is-correct, but empty-feels-broken;
   better seeding is the most-wanted improvement.
-- **No eval harness yet.** Retrieval quality is currently argued, not measured. A
-  curated error set with a recall@5 and false-positive bar is needed before
-  retrieval internals are tuned further.
+- **Retrieval benchmark corpus.** `never-again-eval` measures recall@1,
+  recall@5, MRR, abstention accuracy, and false-positive rate on
+  `never_again/evals/retrieval_cases.json`. The open problem is growing the
+  corpus with real recurring failures before tuning retrieval internals.
 - **Stack tag affects embeddings.** The `[Stack: …]` tag means the same logical
   failure logged from two different repos can embed slightly differently. Accepted
   trade-off for now, documented so it's not a surprise.

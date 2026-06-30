@@ -119,13 +119,13 @@ async def test_verbatim_rule_omits_empty_fields():
 
 # ---------------- .env loading ----------------
 def test_dotenv_loads_and_real_env_wins(tmp_path, monkeypatch):
-    import os
     from never_again.config import load
 
     env_file = tmp_path / ".env"
     env_file.write_text(
         "# comment\n"
         "NEVER_AGAIN_EMBEDDER=ollama\n"
+        "NEVER_AGAIN_EMBED_DIMENSION=384\n"
         "export NEVER_AGAIN_COSINE_FLOOR=0.55\n"
         'OLLAMA_EMBED_MODEL="nomic-embed-text"\n'
     )
@@ -134,10 +134,12 @@ def test_dotenv_loads_and_real_env_wins(tmp_path, monkeypatch):
     monkeypatch.setenv("NEVER_AGAIN_EMBEDDER", "fts")
     # make sure these are not already set in the real environment
     monkeypatch.delenv("NEVER_AGAIN_COSINE_FLOOR", raising=False)
+    monkeypatch.delenv("NEVER_AGAIN_EMBED_DIMENSION", raising=False)
     monkeypatch.delenv("OLLAMA_EMBED_MODEL", raising=False)
 
     s = load()
     assert s.cosine_floor == 0.55                      # from file, export-prefixed
+    assert s.embed_dimension == 384                    # from file, parsed as int
     assert s.ollama_embed_model == "nomic-embed-text"  # from file, quotes stripped
     assert s.embedder == "fts"                         # real env wins over file
 

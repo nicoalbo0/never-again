@@ -49,6 +49,8 @@ class Settings:
     server_url: str | None = None
     ollama_url: str = "http://localhost:11434"
     ollama_embed_model: str = "nomic-embed-text"
+    local_embed_model: str = "BAAI/bge-small-en-v1.5"
+    embed_dimension: int | None = None
     # Relevance floor: drop hits below this bar so the system abstains instead
     # of returning a confident wrong match. cosine_floor gates the semantic path
     # (when embeddings are on); fused_floor gates the keyword-only path.
@@ -66,6 +68,11 @@ def load() -> Settings:
         server_url=os.getenv("NEVER_AGAIN_URL"),
         ollama_url=os.getenv("OLLAMA_URL", "http://localhost:11434"),
         ollama_embed_model=os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
+        local_embed_model=os.getenv("NEVER_AGAIN_LOCAL_EMBED_MODEL", "BAAI/bge-small-en-v1.5"),
+        embed_dimension=(
+            int(os.environ["NEVER_AGAIN_EMBED_DIMENSION"])
+            if os.getenv("NEVER_AGAIN_EMBED_DIMENSION") else None
+        ),
         cosine_floor=float(os.getenv("NEVER_AGAIN_COSINE_FLOOR", "0.45")),
         fused_floor=float(os.getenv("NEVER_AGAIN_FUSED_FLOOR", "0.10")),
     )

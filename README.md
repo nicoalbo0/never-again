@@ -64,7 +64,7 @@ pip install never-again
 ```
 
 If you want the `never-again` command available globally — recommended, and
-required if you use the session-start hook (see [Agent skill](https://claude.ai/chat/db22b7ff-5c87-40da-92e8-a73a8b66205b#agent-skill)) —
+required if you use the session-start hook (see [Agent skill](skill/SKILL.md)) —
 install it as a tool instead, so it lands on your `PATH`:
 
 ```bash
@@ -116,7 +116,7 @@ project your agent is working in:
 }
 ```
 
-**With a `.env` file.** Copy [`.env.example`](https://claude.ai/chat/.env.example) to `.env` and edit
+**With a `.env` file.** Copy [`.env.example`](.env.example) to `.env` and edit
 it. This is handy for the CLI and local development. Note that the MCP server is
 launched by your agent's client, not from your project folder, so a bare `.env`
 sitting in a project directory will **not** be picked up by the server. To use a
@@ -143,6 +143,8 @@ NEVER_AGAIN_EMBEDDER=local
 | Variable                     | Default              | Purpose                                                               |
 | ---------------------------- | -------------------- | --------------------------------------------------------------------- |
 | `NEVER_AGAIN_EMBEDDER`     | `fts`              | `local`(in-process semantic search) or`ollama`                    |
+| `NEVER_AGAIN_LOCAL_EMBED_MODEL` | `BAAI/bge-small-en-v1.5` | fastembed model used by `local` semantic search              |
+| `NEVER_AGAIN_EMBED_DIMENSION` | *unset*          | optional Postgres vector dimension for indexed team search             |
 | `NEVER_AGAIN_COSINE_FLOOR` | `0.45`             | min similarity to count as a match (semantic path)                    |
 | `NEVER_AGAIN_TEAM`         | `local`            | your team slug, when sharing                                          |
 | `NEVER_AGAIN_URL`          | *unset*            | a team server URL; when set, tools talk to it instead of local SQLite |
@@ -151,6 +153,11 @@ NEVER_AGAIN_EMBEDDER=local
 ### Team sharing
 
 To share failures across a team, run the included server (FastAPI + Postgres with pgvector) and point clients at it with `NEVER_AGAIN_URL`. The deployment files are in `deploy/` — see `deploy/docker-compose.yml`.
+
+The initial Postgres schema accepts vectors from any supported embedder. Once a
+team has standardized on one embedding model, add a dimension-specific pgvector
+ANN index using `deploy/vector_index_templates.sql` and set
+`NEVER_AGAIN_EMBED_DIMENSION` to the same dimension so queries use it.
 
 ## How it works
 
@@ -171,19 +178,24 @@ Each error is fingerprinted — paths, numbers, hex, and UUIDs are normalized aw
 pip install -e ".[local]"
 pip install pytest pytest-asyncio fastapi httpx mcp
 pytest
+never-again-eval
 ```
 
 The test suite is fully mocked — no network, no real embedding models, no external services.
+`never-again-eval` runs the curated retrieval benchmark in
+`never_again/evals/`. The corpus is made of anonymized observed development
+failures plus hard negatives. Use `never-again-eval --check` when you want
+threshold gating in CI.
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](https://claude.ai/chat/CONTRIBUTING.md) for dev setup
-and the design principles to keep in mind, and [ARCHITECTURE.md](https://claude.ai/chat/ARCHITECTURE.md)
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup
+and the design principles to keep in mind, and [ARCHITECTURE.md](ARCHITECTURE.md)
 for how the pieces fit together and why. The most-wanted improvements are better
 cold-start seeding and an eval harness; both are described there.
 
-Release notes live in [CHANGELOG.md](https://claude.ai/chat/CHANGELOG.md).
+Release notes live in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-[Apache-2.0](https://claude.ai/chat/LICENSE)
+[Apache-2.0](LICENSE)

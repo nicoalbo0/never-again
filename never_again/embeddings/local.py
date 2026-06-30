@@ -4,13 +4,14 @@ import asyncio
 
 
 class LocalEmbedder:
-    def __init__(self) -> None:
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5") -> None:
+        self._model_name = model_name
         self._model = None  # loaded lazily on first embed (downloads once, then cached)
 
     def _encode(self, text: str) -> list[float]:
         if self._model is None:
             from fastembed import TextEmbedding
-            self._model = TextEmbedding()
+            self._model = TextEmbedding(model_name=self._model_name)
         return next(iter(self._model.embed([text]))).tolist()
 
     async def embed(self, text: str) -> list[float] | None:

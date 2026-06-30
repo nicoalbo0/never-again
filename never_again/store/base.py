@@ -35,6 +35,6 @@ def open_store(settings: Settings) -> Store:
         return HttpStore(settings.server_url, team=settings.team)
     if settings.store == "postgres":
         from never_again.store.postgres import PostgresStore
-        return PostgresStore(settings.db)
+        return PostgresStore(settings.db, embedding_dimension=settings.embed_dimension)
     from never_again.store.sqlite import SqliteStore
     return SqliteStore(settings.db)

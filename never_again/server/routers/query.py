@@ -8,6 +8,8 @@ class QueryRequest(BaseModel):
     text: str
     team: str = "local"
     limit: int = 5
+    cosine_floor: float | None = None
+    fused_floor: float | None = None
 
 
 class HitResponse(BaseModel):
@@ -31,7 +33,13 @@ router = APIRouter()
 async def query_failures(request: Request, payload: QueryRequest) -> QueryResponse:
     engine = request.app.state.engine
     try:
-        hits = await engine.query(payload.text, team=payload.team, limit=payload.limit)
+        hits = await engine.query(
+            payload.text,
+            team=payload.team,
+            limit=payload.limit,
+            cosine_floor=payload.cosine_floor,
+            fused_floor=payload.fused_floor,
+        )
         results = [
             HitResponse(
                 id=hit.failure.id or "",

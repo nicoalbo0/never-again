@@ -1,0 +1,431 @@
+{
+  "metadata": {
+    "name": "developer-workflow-retrieval-v1",
+    "description": "Anonymized failures from real never-again development sessions and repo-encoded regression cases.",
+    "case_policy": "Every failure must cite provenance. Queries should paraphrase how an agent or developer would ask after seeing the failure."
+  },
+  "failures": [
+    {
+      "id": "missing_mcp_dependency",
+      "source": {
+        "kind": "observed-session",
+        "where": "pytest collection in local shell",
+        "note": "Python 3.10 environment lacked project dependencies."
+      },
+      "error": "ModuleNotFoundError: No module named 'mcp'",
+      "solution": "Use the project Python 3.12 virtualenv and install the declared runtime dependencies before running MCP tests.",
+      "context": "pytest collected tests/test_mcp.py from the wrong interpreter environment"
+    },
+    {
+      "id": "missing_aiosqlite_dependency",
+      "source": {
+        "kind": "observed-session",
+        "where": "pytest collection in local shell",
+        "note": "Python 3.10 environment lacked project dependencies."
+      },
+      "error": "ModuleNotFoundError: No module named 'aiosqlite'",
+      "solution": "Run tests with the project virtualenv or install the base package dependencies before importing the SQLite store.",
+      "context": "pytest collected tests/test_store_floor.py outside the project environment"
+    },
+    {
+      "id": "uv_cache_permission",
+      "source": {
+        "kind": "observed-session",
+        "where": "uv run python --version",
+        "note": "Sandbox blocked uv cache access outside the workspace."
+      },
+      "error": "error: Failed to initialize cache at ~/.cache/uv; Operation not permitted",
+      "solution": "Use an existing in-repo virtualenv, set UV_CACHE_DIR to a writable path, or request permission before running uv.",
+      "context": "managed filesystem sandbox running uv"
+    },
+    {
+      "id": "ruff_missing_in_env",
+      "source": {
+        "kind": "observed-session",
+        "where": "python -m ruff check never_again tests",
+        "note": "The local venv had test dependencies but not the lint tool."
+      },
+      "error": "No module named ruff",
+      "solution": "Install Ruff in the active development environment before running the lint command.",
+      "context": "local Python virtualenv lint verification"
+    },
+    {
+      "id": "git_gpg_signing_in_sandbox",
+      "source": {
+        "kind": "observed-session",
+        "where": "tests/test_seed.py temporary git repository",
+        "note": "Global git config required commit signing, but GPG could not write to the home directory."
+      },
+      "error": "gpg failed to sign the data; failed to create temporary file ~/.gnupg; Operation not permitted",
+      "solution": "Disable commit signing in throwaway test repositories with git config commit.gpgsign false.",
+      "context": "pytest fixture creating git commits in a sandbox"
+    },
+    {
+      "id": "importlib_resources_namespace",
+      "source": {
+        "kind": "observed-session",
+        "where": "python -m never_again.eval_harness",
+        "note": "Package data lookup failed because the top-level package was a namespace package."
+      },
+      "error": "NotADirectoryError: MultiplexedPath only supports directories",
+      "solution": "Add package __init__.py files and load resources from the concrete never_again.evals package.",
+      "context": "importlib.resources.files used for packaged benchmark data"
+    },
+    {
+      "id": "docker_compose_wrong_context",
+      "source": {
+        "kind": "repo-review",
+        "where": "deploy/docker-compose.yml",
+        "note": "Compose file lived under deploy while Dockerfile copied project-root files."
+      },
+      "error": "Docker build cannot find pyproject.toml or never_again package when building from deploy directory",
+      "solution": "Set build context to the repository root and Dockerfile to deploy/Dockerfile.",
+      "context": "team server Docker compose build"
+    },
+    {
+      "id": "team_env_names_drift",
+      "source": {
+        "kind": "repo-review",
+        "where": "deploy/docker-compose.yml and config.py",
+        "note": "Deploy config used stale environment variable names."
+      },
+      "error": "Team server starts with SQLite defaults because DATABASE_URL, EMBED_MODEL, and DEFAULT_TEAM are ignored",
+      "solution": "Use NEVER_AGAIN_STORE, NEVER_AGAIN_DB, NEVER_AGAIN_EMBEDDER, OLLAMA_EMBED_MODEL, and NEVER_AGAIN_TEAM.",
+      "context": "FastAPI team tier configuration"
+    },
+    {
+      "id": "http_query_floor_drift",
+      "source": {
+        "kind": "repo-review",
+        "where": "HttpStore.search and server query router",
+        "note": "Client sent relevance floor fields that the server request model ignored."
+      },
+      "error": "HTTP query relevance floors are silently dropped by the team server",
+      "solution": "Add cosine_floor and fused_floor to the server query payload and pass them to Engine.query.",
+      "context": "team-tier HTTP proxy search"
+    },
+    {
+      "id": "team_config_not_applied_cli",
+      "source": {
+        "kind": "repo-review",
+        "where": "Engine.log/query and CLI calls",
+        "note": "Engine methods defaulted to local team even when settings.team was configured."
+      },
+      "error": "NEVER_AGAIN_TEAM is ignored by CLI search and log calls",
+      "solution": "Default Engine.log and Engine.query to settings.team when the caller does not pass a team.",
+      "context": "CLI using configured team slug"
+    },
+    {
+      "id": "pgvector_dimension_mismatch",
+      "source": {
+        "kind": "repo-review",
+        "where": "deploy/migrations/001_initial.sql and embedder settings",
+        "note": "Schema hardcoded one vector size while supported embedders can emit different dimensions."
+      },
+      "error": "pgvector different vector dimensions 384 and 768",
+      "solution": "Keep the stored vector unconstrained unless one model is chosen, then add a matching expression index and set NEVER_AGAIN_EMBED_DIMENSION.",
+      "context": "Postgres team search with local fastembed and Ollama embeddings"
+    },
+    {
+      "id": "README_links_rewritten",
+      "source": {
+        "kind": "repo-review",
+        "where": "README.md",
+        "note": "Local markdown links had been rewritten to chat URLs."
+      },
+      "error": "README links point to https://claude.ai/chat/... instead of repository files",
+      "solution": "Use relative links for repository documents such as .env.example, CONTRIBUTING.md, ARCHITECTURE.md, and LICENSE.",
+      "context": "package documentation before publishing"
+    }
+  ],
+  "queries": [
+    {
+      "id": "q_mcp_import_pytest",
+      "category": "dependency-env",
+      "text": "pytest fails collecting test_mcp because ModuleNotFoundError no module named mcp",
+      "expected": ["missing_mcp_dependency"]
+    },
+    {
+      "id": "q_mcp_dependency_missing",
+      "category": "dependency-env",
+      "text": "from mcp.server.fastmcp import FastMCP raises ModuleNotFoundError",
+      "expected": ["missing_mcp_dependency"]
+    },
+    {
+      "id": "q_mcp_wrong_python",
+      "category": "dependency-env",
+      "text": "tests run under system python and cannot import mcp package",
+      "expected": ["missing_mcp_dependency"]
+    },
+    {
+      "id": "q_aiosqlite_import_pytest",
+      "category": "dependency-env",
+      "text": "pytest cannot import aiosqlite from never_again store sqlite",
+      "expected": ["missing_aiosqlite_dependency"]
+    },
+    {
+      "id": "q_aiosqlite_missing_module",
+      "category": "dependency-env",
+      "text": "ModuleNotFoundError aiosqlite when importing SqliteStore",
+      "expected": ["missing_aiosqlite_dependency"]
+    },
+    {
+      "id": "q_aiosqlite_wrong_env",
+      "category": "dependency-env",
+      "text": "base dependency aiosqlite missing because command used wrong interpreter",
+      "expected": ["missing_aiosqlite_dependency"]
+    },
+    {
+      "id": "q_uv_cache_init",
+      "category": "tooling",
+      "text": "uv failed to initialize cache Operation not permitted",
+      "expected": ["uv_cache_permission"]
+    },
+    {
+      "id": "q_uv_cache_home",
+      "category": "tooling",
+      "text": "uv cannot open ~/.cache/uv sdists git file in sandbox",
+      "expected": ["uv_cache_permission"]
+    },
+    {
+      "id": "q_uv_cache_sandbox",
+      "category": "tooling",
+      "text": "running uv in managed filesystem fails because cache directory is outside workspace",
+      "expected": ["uv_cache_permission"]
+    },
+    {
+      "id": "q_ruff_no_module",
+      "category": "tooling",
+      "text": "python -m ruff check fails with No module named ruff",
+      "expected": ["ruff_missing_in_env"]
+    },
+    {
+      "id": "q_ruff_not_installed",
+      "category": "tooling",
+      "text": "local virtualenv can run pytest but cannot run ruff module",
+      "expected": ["ruff_missing_in_env"]
+    },
+    {
+      "id": "q_ruff_ci_tool_missing",
+      "category": "tooling",
+      "text": "CI lint tool missing from development environment",
+      "expected": ["ruff_missing_in_env"]
+    },
+    {
+      "id": "q_git_gpg_failed",
+      "category": "git",
+      "text": "git commit in temp repo fails gpg failed to sign the data Operation not permitted",
+      "expected": ["git_gpg_signing_in_sandbox"]
+    },
+    {
+      "id": "q_git_signing_fixture",
+      "category": "git",
+      "text": "pytest fixture creates git commits but global gpg signing blocks commit object",
+      "expected": ["git_gpg_signing_in_sandbox"]
+    },
+    {
+      "id": "q_git_gnupg_sandbox",
+      "category": "git",
+      "text": "gpg cannot create temporary file in ~/.gnupg during test repo commit",
+      "expected": ["git_gpg_signing_in_sandbox"]
+    },
+    {
+      "id": "q_importlib_multiplexed",
+      "category": "packaging",
+      "text": "importlib.resources files raises MultiplexedPath only supports directories",
+      "expected": ["importlib_resources_namespace"]
+    },
+    {
+      "id": "q_eval_resource_namespace",
+      "category": "packaging",
+      "text": "packaged eval json lookup fails because never_again is namespace package",
+      "expected": ["importlib_resources_namespace"]
+    },
+    {
+      "id": "q_resource_reader_error",
+      "category": "packaging",
+      "text": "get_resource_reader NotADirectoryError when loading package data",
+      "expected": ["importlib_resources_namespace"]
+    },
+    {
+      "id": "q_docker_context_missing_pyproject",
+      "category": "docker",
+      "text": "docker compose build cannot find pyproject.toml from deploy folder",
+      "expected": ["docker_compose_wrong_context"]
+    },
+    {
+      "id": "q_docker_context_package_missing",
+      "category": "docker",
+      "text": "Dockerfile COPY never_again fails because build context is deploy",
+      "expected": ["docker_compose_wrong_context"]
+    },
+    {
+      "id": "q_docker_build_context",
+      "category": "docker",
+      "text": "team server image should build from repository root not deploy directory",
+      "expected": ["docker_compose_wrong_context"]
+    },
+    {
+      "id": "q_env_database_url_ignored",
+      "category": "team-config",
+      "text": "DATABASE_URL is set but server still uses local sqlite database",
+      "expected": ["team_env_names_drift"]
+    },
+    {
+      "id": "q_env_embed_model_ignored",
+      "category": "team-config",
+      "text": "docker compose sets EMBED_MODEL but config reads OLLAMA_EMBED_MODEL",
+      "expected": ["team_env_names_drift"]
+    },
+    {
+      "id": "q_env_default_team_ignored",
+      "category": "team-config",
+      "text": "DEFAULT_TEAM environment variable ignored by Settings",
+      "expected": ["team_env_names_drift"]
+    },
+    {
+      "id": "q_http_floor_dropped",
+      "category": "team-config",
+      "text": "HttpStore sends cosine_floor but FastAPI QueryRequest drops it",
+      "expected": ["http_query_floor_drift"]
+    },
+    {
+      "id": "q_http_fused_floor_ignored",
+      "category": "team-config",
+      "text": "team server ignores fused_floor from HTTP query payload",
+      "expected": ["http_query_floor_drift"]
+    },
+    {
+      "id": "q_http_relevance_parity",
+      "category": "team-config",
+      "text": "local and HTTP search use different relevance floor settings",
+      "expected": ["http_query_floor_drift"]
+    },
+    {
+      "id": "q_cli_team_local",
+      "category": "team-config",
+      "text": "NEVER_AGAIN_TEAM acme set but CLI search queries local team",
+      "expected": ["team_config_not_applied_cli"]
+    },
+    {
+      "id": "q_engine_team_default",
+      "category": "team-config",
+      "text": "Engine query default team local ignores configured settings team",
+      "expected": ["team_config_not_applied_cli"]
+    },
+    {
+      "id": "q_cli_log_team",
+      "category": "team-config",
+      "text": "never-again log stores failures under local instead of configured team slug",
+      "expected": ["team_config_not_applied_cli"]
+    },
+    {
+      "id": "q_pgvector_dimensions",
+      "category": "postgres",
+      "text": "pgvector complains vector dimensions 384 and 768 differ",
+      "expected": ["pgvector_dimension_mismatch"]
+    },
+    {
+      "id": "q_embedding_dimension_switch",
+      "category": "postgres",
+      "text": "switching from fastembed 384 dimensions to ollama 768 breaks stored vectors",
+      "expected": ["pgvector_dimension_mismatch"]
+    },
+    {
+      "id": "q_postgres_vector_index_dimension",
+      "category": "postgres",
+      "text": "Postgres vector index needs same dimension as embedding model",
+      "expected": ["pgvector_dimension_mismatch"]
+    },
+    {
+      "id": "q_readme_claude_links",
+      "category": "docs",
+      "text": "README links point to claude.ai chat instead of CONTRIBUTING.md",
+      "expected": ["README_links_rewritten"]
+    },
+    {
+      "id": "q_readme_env_example_link",
+      "category": "docs",
+      "text": ".env.example link in README opens claude chat URL",
+      "expected": ["README_links_rewritten"]
+    },
+    {
+      "id": "q_docs_relative_links",
+      "category": "docs",
+      "text": "package documentation has rewritten chat links for LICENSE and ARCHITECTURE",
+      "expected": ["README_links_rewritten"]
+    },
+    {
+      "id": "q_negative_asyncpg_param_type",
+      "category": "negative-hard",
+      "text": "asyncpg cannot determine data type of query parameter $1",
+      "expected": []
+    },
+    {
+      "id": "q_negative_sqlite_unique",
+      "category": "negative-hard",
+      "text": "sqlite3 IntegrityError UNIQUE constraint failed failures fingerprint team solution",
+      "expected": []
+    },
+    {
+      "id": "q_negative_docker_ollama",
+      "category": "negative-hard",
+      "text": "Ollama localhost connection refused from Docker container",
+      "expected": []
+    },
+    {
+      "id": "q_negative_postgres_auth",
+      "category": "negative-hard",
+      "text": "asyncpg InvalidPasswordError password authentication failed for user",
+      "expected": []
+    },
+    {
+      "id": "q_negative_mcp_stdout",
+      "category": "negative-hard",
+      "text": "MCP server stdout is valid but client still cannot negotiate protocol version",
+      "expected": []
+    },
+    {
+      "id": "q_negative_uv_lock",
+      "category": "negative-hard",
+      "text": "uv lock generated unexpectedly after installing a dev dependency",
+      "expected": []
+    },
+    {
+      "id": "q_negative_importlib_file",
+      "category": "negative-hard",
+      "text": "importlib.metadata PackageNotFoundError for never-again distribution",
+      "expected": []
+    },
+    {
+      "id": "q_negative_github_token",
+      "category": "negative-hard",
+      "text": "GitHub API returns 401 bad credentials for GITHUB_TOKEN during issue seeding",
+      "expected": []
+    },
+    {
+      "id": "q_negative_pytest_asyncio",
+      "category": "negative-hard",
+      "text": "pytest warns async fixture has no plugin handling it",
+      "expected": []
+    },
+    {
+      "id": "q_negative_pypi_publish",
+      "category": "negative-hard",
+      "text": "twine check fails because long description has invalid markdown",
+      "expected": []
+    },
+    {
+      "id": "q_negative_external_react",
+      "category": "negative-broad",
+      "text": "React hydration mismatch expected server HTML to contain matching div",
+      "expected": []
+    },
+    {
+      "id": "q_negative_external_kubernetes",
+      "category": "negative-broad",
+      "text": "Kubernetes ImagePullBackOff private registry secret missing",
+      "expected": []
+    }
+  ]
+}

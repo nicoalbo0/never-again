@@ -24,7 +24,7 @@ class Engine:
                    open_rules(settings), settings=settings)
 
     async def log(self, error: str, solution: str = "", context: str = "",
-                  scope: str = "local", team: str = "local",
+                  scope: str = "local", team: str | None = None,
                   rule: str | None = None) -> Failure:
         """Capture a failure: redact, fingerprint, attach a rule, embed, store.
 
@@ -34,6 +34,7 @@ class Engine:
         """
         error, solution, context = anonymize(error), anonymize(solution), anonymize(context)
         rule = anonymize(rule) if rule else None
+        team = team or (self.settings.team if self.settings else "local")
         detected = detect_tech_stack()
         if detected:
             stack_str = f"[Stack: {', '.join(detected)}]"
@@ -47,7 +48,9 @@ class Engine:
         vector = await self.embedder.embed(f"{error}\n{context}".strip())
         return await self.store.add(failure, vector)
 
-    async def query(self, text: str, team: str = "local", limit: int = 5) -> list[Hit]:
+    async def query(self, text: str, team: str | None = None, limit: int = 5,
+                    cosine_floor: float | None = None,
+                    fused_floor: float | None = None) -> list[Hit]:
         """Find past failures similar to the given text.
 
         The detected tech stack enriches BOTH retrieval paths symmetrically:
@@ -63,13 +66,16 @@ class Engine:
         actually separates matches from noise) and on the fused score otherwise.
         """
         detected = detect_tech_stack()
+        team = team or (self.settings.team if self.settings else "local")
         if detected:
             enriched_text = f"{text} {' '.join(detected)}"
         else:
             enriched_text = text
         vector = await self.embedder.embed(enriched_text)
-        cosine_floor = self.settings.cosine_floor if self.settings else 0.0
-        fused_floor = self.settings.fused_floor if self.settings else 0.0
+        if cosine_floor is None:
+            cosine_floor = self.settings.cosine_floor if self.settings else 0.0
+        if fused_floor is None:
+            fused_floor = self.settings.fused_floor if self.settings else 0.0
         return await self.store.search(
             enriched_text, vector, team=team, limit=limit,
             cosine_floor=cosine_floor, fused_floor=fused_floor)

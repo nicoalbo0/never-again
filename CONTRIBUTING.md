@@ -32,6 +32,7 @@ pip install -e ".[local]"
 pip install pytest pytest-asyncio fastapi httpx mcp ruff
 
 pytest          # 54 tests, all mocked — no network, no real models
+never-again-eval
 ruff check .    # lint
 ```
 
@@ -76,8 +77,10 @@ wiring it into the factory — nothing else should need to change.
 - **Tests included.** New behavior needs a test; a bug fix needs a regression
   test that fails before your change and passes after.
 - **Floors respected.** If your change affects retrieval, say in the PR
-  description what it does to false positives. "It returns more results" is a red
-  flag unless you can show the extra results are real matches.
+  description what it does to false positives. Run `never-again-eval` and include
+  the recall / MRR / false-positive output; use `never-again-eval --check` for
+  threshold gating. "It returns more results" is a red flag unless you can show
+  the extra results are real matches.
 - **No new required dependency in the base tier.** New libraries belong behind an
   optional extra in `pyproject.toml` (`[local]`, `[ollama]`, `[server]`).
 - **Docs updated** if you changed a tool signature, an env var, or the install
@@ -92,8 +95,10 @@ the issue tracker for detail):
 - **Cold-start seeding.** Git-history mining is the current approach; better
   strategies for making a fresh install useful before the first logged failure
   are wanted.
-- **Eval harness.** A measurable recall@5 and false-positive bar, on a curated set
-  of real errors, so retrieval changes can be judged instead of guessed.
+- **Benchmark corpus.** The `never-again-eval` harness exists; the next
+  high-value work is adding more real positive and negative cases to
+  `never_again/evals/`. New stored failures need source/provenance metadata;
+  avoid invented tidy examples.
 - **More agent integrations.** Tested setup recipes for editors and agents beyond
   Claude Code / Cursor / Gemini CLI.
 

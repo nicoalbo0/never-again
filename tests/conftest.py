@@ -2,10 +2,6 @@
 real embedding models, no external services."""
 from __future__ import annotations
 
-import asyncio
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from never_again.config import Settings

@@ -36,6 +36,10 @@ Issues = "https://github.com/nicoalbo0/never-again/issues"
 [project.scripts]
 never-again     = "never_again.cli.main:main"
 never-again-mcp = "never_again.mcp.server:main"
+never-again-eval = "never_again.eval_harness:main"
 
 [tool.setuptools.packages.find]
 include = ["never_again*"]
+
+[tool.setuptools.package-data]
+never_again = ["evals/*.json"]

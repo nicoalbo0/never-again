@@ -13,8 +13,9 @@ def _vec(embedding) -> str | None:
 
 
 class PostgresStore:
-    def __init__(self, dsn: str) -> None:
+    def __init__(self, dsn: str, embedding_dimension: int | None = None) -> None:
         self._dsn = dsn.replace("postgresql+asyncpg://", "postgresql://")
+        self._embedding_dimension = embedding_dimension
         self._pool: asyncpg.Pool | None = None
 
     async def _p(self) -> asyncpg.Pool:
@@ -53,9 +54,16 @@ class PostgresStore:
         semantic_ids = []
         cosine_by_id: dict[str, float] = {}
         if embedding:
+            if self._embedding_dimension:
+                distance_sql = (
+                    f"embedding::vector({self._embedding_dimension}) "
+                    f"<=> CAST($1 AS vector({self._embedding_dimension}))"
+                )
+            else:
+                distance_sql = "embedding <=> CAST($1 AS vector)"
             # pgvector <=> is cosine DISTANCE; similarity = 1 - distance
             sem = await pool.fetch(
-                f"""SELECT id, embedding <=> CAST($1 AS vector) AS dist
+                f"""SELECT id, {distance_sql} AS dist
                     FROM failures WHERE embedding IS NOT NULL AND {visible}
                     ORDER BY dist LIMIT 50""",
                 _vec(embedding), team)

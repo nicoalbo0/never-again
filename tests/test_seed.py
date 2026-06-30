@@ -16,11 +16,14 @@ from never_again.seed.project_history import (
 def _make_repo(tmp_path: Path, subjects: list[str]) -> Path:
     d = tmp_path / "repo"
     d.mkdir()
-    run = lambda *a: subprocess.run(["git", *a], cwd=str(d),
-                                    capture_output=True)
+
+    def run(*a):
+        return subprocess.run(["git", *a], cwd=str(d), capture_output=True)
+
     run("init", "-q")
     run("config", "user.email", "t@t.com")
     run("config", "user.name", "t")
+    run("config", "commit.gpgsign", "false")
     for i, subj in enumerate(subjects):
         (d / "f.txt").write_text(f"{i}")
         run("add", ".")

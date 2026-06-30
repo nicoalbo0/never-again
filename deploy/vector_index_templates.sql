@@ -1,0 +1,26 @@
+-- Optional pgvector ANN index templates.
+--
+-- 001_initial.sql keeps `embedding` unconstrained so the team tier can accept
+-- any configured embedder. Once a team has chosen ONE embedding model, replace
+-- `<DIMENSION>` below with that model's vector size and run exactly one index.
+-- Set NEVER_AGAIN_EMBED_DIMENSION to the same value so queries use the matching
+-- expression and the planner can use the index.
+--
+-- Known defaults:
+--   NEVER_AGAIN_EMBEDDER=local,  NEVER_AGAIN_LOCAL_EMBED_MODEL=BAAI/bge-small-en-v1.5 -> 384
+--   NEVER_AGAIN_EMBEDDER=ollama, OLLAMA_EMBED_MODEL=nomic-embed-text             -> 768
+--
+-- ivfflat is a good default once the table has representative data. Reindex
+-- after large data shifts.
+--
+-- CREATE INDEX CONCURRENTLY IF NOT EXISTS failures_embedding_ivfflat_idx
+--     ON failures USING ivfflat ((embedding::vector(<DIMENSION>)) vector_cosine_ops)
+--     WITH (lists = 100)
+--     WHERE embedding IS NOT NULL;
+--
+-- HNSW has stronger recall and no training step, with higher build/memory cost.
+--
+-- CREATE INDEX CONCURRENTLY IF NOT EXISTS failures_embedding_hnsw_idx
+--     ON failures USING hnsw ((embedding::vector(<DIMENSION>)) vector_cosine_ops)
+--     WITH (m = 16, ef_construction = 64)
+--     WHERE embedding IS NOT NULL;

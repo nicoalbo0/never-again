@@ -11,8 +11,7 @@ import pytest
 
 from never_again.config import Settings
 from never_again.engine import Engine
-from never_again.store.sqlite import SqliteStore, _overlap, _content_terms
-from never_again.core.models import Failure
+from never_again.store.sqlite import _overlap, _content_terms
 
 
 # ---------------- overlap helper (FTS floor primitive) ----------------

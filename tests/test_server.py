@@ -56,6 +56,22 @@ def test_query_failures_returns_results(client):
     assert results[0]["id"] == "id1" and results[0]["score"] == 0.5
 
 
+def test_query_forwards_relevance_floors(client):
+    client.app.state.engine.query.return_value = []
+    r = client.post(
+        "/failures/query",
+        json={"text": "boom", "cosine_floor": 0.7, "fused_floor": 0.2},
+    )
+    assert r.status_code == 200
+    client.app.state.engine.query.assert_awaited_once_with(
+        "boom",
+        team="local",
+        limit=5,
+        cosine_floor=0.7,
+        fused_floor=0.2,
+    )
+
+
 def test_query_empty_results(client):
     client.app.state.engine.query.return_value = []
     r = client.post("/failures/query", json={"text": "nothing"})

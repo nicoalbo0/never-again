@@ -13,7 +13,10 @@ CREATE TABLE IF NOT EXISTS failures (
     scope       TEXT NOT NULL DEFAULT 'local',
     team        TEXT NOT NULL DEFAULT 'local',
     verified    INTEGER NOT NULL DEFAULT 0,
-    embedding   vector(768),
+    -- Dimension is intentionally unconstrained because supported embedders may
+    -- differ (fastembed's default local model is 384d; Ollama's nomic model is
+    -- 768d). Add a dimension-specific ANN index only after choosing one model.
+    embedding   vector,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     search      tsvector GENERATED ALWAYS AS (
                     to_tsvector('english', error || ' ' || context || ' ' || solution)
@@ -23,9 +26,6 @@ CREATE TABLE IF NOT EXISTS failures (
 
 CREATE INDEX IF NOT EXISTS failures_search_idx
     ON failures USING GIN (search);
-
-CREATE INDEX IF NOT EXISTS failures_embedding_idx
-    ON failures USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 CREATE INDEX IF NOT EXISTS failures_team_scope_idx
     ON failures (team, scope);
